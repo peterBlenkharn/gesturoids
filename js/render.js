@@ -112,6 +112,34 @@ export function renderDebugView(results) {
 }
 
 /**
+ * Draws the shield status bar on the HUD canvas.
+ * Must be exported to be called from main.js gameLoop.
+ */
+export function drawShields(shieldCtx) {
+  // Clear the shield canvas area
+  shieldCtx.clearRect(0, 0, 100, 30);
+  
+  // Set style for drawing the health bars
+  shieldCtx.strokeStyle = "#ff3333"; // Danger color from original file
+  shieldCtx.lineWidth = 2;
+  
+  // Draw one bar for each shield point the player has
+  for (let i = 0; i < CONSTANTS.MAX_SHIELDS; i++) {
+    // Calculate position: [5, 30, 55] for 3 bars
+    const x = 5 + i * 25; 
+    
+    // Check if the current shield point is active
+    if (i < state.shields) {
+      shieldCtx.fillStyle = colorPalette.MINT; // Active shield color
+      shieldCtx.fillRect(x, 5, 20, 20);
+    } 
+    
+    // Draw the shield container box (always drawn, whether active or not)
+    shieldCtx.strokeRect(x, 5, 20, 20);
+  }
+}
+
+/**
  * The main function to draw all game elements in the loop.
  * (Full implementation will occur later)
  */
