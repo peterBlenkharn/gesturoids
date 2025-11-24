@@ -174,21 +174,23 @@ export function processHands(results) {
  * Handles the logic for confirming the player is ready to start.
  */
 function checkCalibration() {
-    // Calibration requires both hands to be visible and stable
-    if (state.hasLeft && state.hasRight) {
+    // Calibration requires both hands to be visible AND holding 'Open_Palm'
+    const isCalibratingGesture = (state.inputLeft === "Open_Palm" && state.inputRight === "Open_Palm");
+    
+    // We only increase the score if the hands are present AND the correct gesture is made.
+    if (state.hasLeft && state.hasRight && isCalibratingGesture) {
         
-        // Both hands are detected, increase calibration score
+        // Both hands are detected with the correct gesture, increase calibration score
         state.calibScore++;
         
         // If score reaches threshold, transition to game start
         if (state.calibScore >= CONSTANTS.CALIB_THRESHOLD) {
             console.log("CALIBRATION COMPLETE: Starting Game.");
-            state.mode = "HOLDING"; // Transition to Spatial Start state
-            // startGame(); // To be called from main.js or a dedicated game start module
+            state.mode = "PLAYING"; // Transition directly to PLAYING (Game loop will call startGame)
             state.calibScore = 0; // Reset
         }
     } else {
-        // Hands are not visible or stable, decrease score (prevents cheating/accidental starts)
+        // Decrease score quickly if conditions are not met
         state.calibScore = Math.max(0, state.calibScore - 2); 
     }
 }
