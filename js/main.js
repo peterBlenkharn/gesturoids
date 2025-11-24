@@ -123,15 +123,30 @@ function initialize() {
  */
 function gameLoop(timestamp) {
     
-    // Update the menu state on every frame until playing
+    let dt = 1.0; 
+
+    // Update the menu state on every frame
     if (state.mode === "LOADING" || state.mode === "MENU" || state.mode === "CALIBRATING") {
         updateMenuState(); 
 
         // Always draw black background when not playing
         DOM.ctx.fillStyle = "black";
         DOM.ctx.fillRect(0, 0, CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT);
+        
+        // --- Calibration UI Update ---
+        if (state.mode === "CALIBRATING") {
+            // Update hand status indicators
+            document.getElementById("status-left").classList.toggle("ok", state.hasLeft);
+            document.getElementById("status-right").classList.toggle("ok", state.hasRight);
+
+            // Update progress bar
+            const progress = (state.calibScore / CONSTANTS.CALIB_THRESHOLD) * 100;
+            document.getElementById("calib-progress").style.width = `${progress}%`;
+            
+            // Update message
+            document.querySelector("#calibration-overlay .msg").textContent = (state.hasLeft && state.hasRight) ? "SYNCHRONIZING..." : "SHOW BOTH HANDS";
+        }
     } 
-    // Other game modes handled later
     
     requestAnimationFrame(gameLoop);
 }
