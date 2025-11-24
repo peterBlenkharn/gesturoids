@@ -19,10 +19,70 @@
         <canvas id="gameCanvas"></canvas>
 
         <div id="ui-layer">
+            <div class="hud-top hidden">
+                <div class="hud-group">
+                    <span class="label">SHIELDS</span>
+                    <canvas id="shieldCanvas" width="100" height="30"></canvas>
+                </div>
+                <div class="hud-group">
+                    <span class="label">SCORE</span>
+                    <span id="scoreDisp">0</span>
+                </div>
+                <div class="hud-group">
+                    <span class="label">ORDNANCE</span>
+                    <span id="missileDisp">LASER</span>
+                </div>
+            </div>
             
-            <div id="camera-pip" class="hidden">
+            <div id="calibration-overlay" class="hidden overlay">
+                <h2 class="blink">SYSTEM CALIBRATION</h2>
+                <p>Show both hands to synchronize</p>
+                
+                <div class="status-container">
+                    <div class="hand-status" id="status-left">
+                        <div class="status-icon">❌</div>
+                        <div class="status-text">PILOT</div>
+                        <div class="status-sub">LEFT SIDE</div>
+                    </div>
+        
+                    <div class="center-status">
+                        <div class="progress-bar"><div id="calib-progress"></div></div>
+                        <div class="msg">HOLD STEADY</div>
+                    </div>
+        
+                    <div class="hand-status" id="status-right">
+                        <div class="status-icon">❌</div>
+                        <div class="status-text">WEAPONS</div>
+                        <div class="status-sub">RIGHT SIDE</div>
+                    </div>
+                </div>
+            </div>
+        
+            <div id="menu-overlay" class="overlay">
+                <h1 class="glitch-text">GESTUROIDS</h1>
+                <p id="loadingText">BOOTING NEURAL NET...</p> 
+                <button id="startBtn" disabled>INITIALIZE SYSTEMS</button>
+                <div id="final-score-box" class="hidden">
+                    <p>MISSION FAILED</p>
+                    <p>SCORE: <span id="finalScoreVal">0</span></p>
+                </div>
+            </div>
+        
+            <div class="debug-controls">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="camToggle" checked>
+                    <span class="slider"></span>
+                </label>
+                <span>OPTICAL SENSORS</span>
+            </div>
+            
+            <div id="camera-pip">
                 <canvas id="debugCanvas"></canvas>
             </div>
+            
+            <div class="controls-layer hidden">
+            </div>
+        
         </div>
 
         <video id="webcam" autoplay playsinline muted></video>
