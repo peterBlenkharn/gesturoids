@@ -77,7 +77,16 @@ export function renderDebugView(results) {
     if (results && results.landmarks) {
         // Simple dot for the wrist landmark
         ctx.fillStyle = colorPalette.MINT;
+        
         results.landmarks.forEach(landmarks => {
+            
+            // CRITICAL FIX: Apply inverse transform for landmarks
+            // Landmarks are 0-1, and we need them to draw on the visually correct side 
+            // after the video has been drawn and the context is in a flipped state.
+            ctx.save();
+            ctx.scale(-1, 1); // Flip X back
+            ctx.translate(-w, 0); // Translate back by the width 'w'
+
             landmarks.forEach((point, index) => {
                 // Scale the normalized landmark coordinates (0 to 1) to the canvas size (80x60)
                 const x = point.x * w;
@@ -86,10 +95,11 @@ export function renderDebugView(results) {
                 // Draw a small dot (only draw the wrist landmark (index 0) for performance)
                 if (index === 0) {
                     ctx.beginPath();
-                    ctx.arc(x, y, 2, 0, 2*Math.PI); 
+                    ctx.arc(x, y, 2, 0, 2 * Math.PI); // Correct JS syntax
                     ctx.fill();
                 }
             });
+            ctx.restore(); // Restore context to the post-video-draw flipped state
         });
     }
 }
