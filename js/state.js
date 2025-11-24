@@ -23,6 +23,16 @@ export const CONSTANTS = {
   SMOOTHING_FRAMES: 5, 
 };
 
+export const HAND_CONNECTIONS = [
+  [0,1],[1,2],[2,3],[3,4], // Thumb
+  [0,5],[5,6],[6,7],[7,8], // Index
+  [9,10],[10,11],[11,12], // Middle
+  [13,14],[14,15],[15,16], // Ring
+  [17,18],[18,19],[19,20], // Pinky
+  [5,9],[9,13],[13,17], // Palm base
+  [0,17] // Wrist to Pinky base
+];
+
 // --- 2. GAME STATE ---
 export const state = {
   mode: "LOADING", // LOADING, MENU, CALIBRATING, HOLDING, PLAYING, PAUSED, GAMEOVER
