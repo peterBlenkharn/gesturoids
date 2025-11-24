@@ -1,19 +1,23 @@
-// js/main.js
+// js/main.js - UPDATED
 
-import { state, CONSTANTS } from './state.js';
-// All other modules will be imported here
+import { state, CONSTANTS, resetEntities } from './state.js';
 import { initAI } from './controls.js'; 
+import { updateVisuals, initRender } from './render.js'; // We'll update render.js next
 
 /**
  * Global DOM element references.
- * Must be accessed after the DOM is fully loaded.
  */
 export const DOM = {
     canvas: null,
     ctx: null,
     video: null,
-    // Add references for all other UI elements (shieldCanvas, debugCanvas, menus, etc.) later
-    ui: {} 
+    
+    // UI specific references for easy access
+    ui: {
+        debugCanvas: null,
+        debugCtx: null,
+        // Other UI elements (menus, HUD, buttons) will go here
+    } 
 };
 
 /**
@@ -22,36 +26,44 @@ export const DOM = {
 function initialize() {
     console.log("Gesturoids System Booting...");
     
-    // 1. Get DOM References
+    // 1. Get Core DOM References
     DOM.canvas = document.getElementById("gameCanvas");
     DOM.ctx = DOM.canvas.getContext("2d");
     DOM.video = document.getElementById("webcam");
     
-    // 2. Set Initial Canvas Size
+    // 2. Get Debug Canvas References (for camera PIP)
+    DOM.ui.debugCanvas = document.getElementById("debugCanvas");
+    DOM.ui.debugCtx = DOM.ui.debugCanvas.getContext("2d");
+    
+    // 3. Set Initial Canvas Size
     DOM.canvas.width = CONSTANTS.CANVAS_WIDTH;
     DOM.canvas.height = CONSTANTS.CANVAS_HEIGHT;
 
-    // 3. Start AI Model Loading
+    // 4. Start AI Model Loading
     initAI();
 
-    // 4. Initial Game Loop Call (Will run only the loading state initially)
+    // 5. Initial Game Loop Call
     requestAnimationFrame(gameLoop);
 }
 
 /**
  * The main game loop function.
- * This will be expanded to handle PHYSICS, RENDERING, and state transitions.
  */
 function gameLoop(timestamp) {
-    if (state.mode === "LOADING") {
-        // Simple loading screen loop
+    
+    let dt = 1.0; // Placeholder for time delta
+
+    if (state.mode === "LOADING" || state.mode === "MENU") {
+        // Simple loading/menu screen loop
         DOM.ctx.fillStyle = "black";
         DOM.ctx.fillRect(0, 0, CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT);
+        // We will call a dedicated menu render function here later
     } 
-    // Other game modes (PLAYING, PAUSED, etc.) handled later
+    // Other game modes handled later
+    
+    // updateVisuals(dt); // Will be added once render.js is ready
     
     requestAnimationFrame(gameLoop);
 }
 
-// Start the whole application
 window.addEventListener('load', initialize);
