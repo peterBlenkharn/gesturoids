@@ -145,19 +145,31 @@ function gameLoop(timestamp) {
         DOM.ctx.fillStyle = "black";
         DOM.ctx.fillRect(0, 0, CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT);
         
-        // --- Calibration UI Update ---
-        if (state.mode === "CALIBRATING") {
-            // Update hand status indicators
-            document.getElementById("status-left").classList.toggle("ok", state.hasLeft);
-            document.getElementById("status-right").classList.toggle("ok", state.hasRight);
+    // --- Calibration UI Update ---
+    if (state.mode === "CALIBRATING") {
+        
+        // 1. Update hand status indicators (using pre-fetched DOM.ui references)
+        DOM.ui.statLeft.classList.toggle("ok", state.hasLeft);
+        DOM.ui.statRight.classList.toggle("ok", state.hasRight);
 
-            // Update progress bar
-            const progress = (state.calibScore / CONSTANTS.CALIB_THRESHOLD) * 100;
-            document.getElementById("calib-progress").style.width = `${progress}%`;
-            
-            // Update message
-            document.querySelector("#calibration-overlay .msg").textContent = (state.hasLeft && state.hasRight) ? "SYNCHRONIZING..." : "SHOW BOTH HANDS";
+        // 2. Update progress bar
+        const progress = (state.calibScore / CONSTANTS.CALIB_THRESHOLD) * 100;
+        DOM.ui.calibBar.style.width = `${progress}%`;
+        
+        // 3. Update message based on status and gesture
+        const isCalibratingGesture = (state.inputLeft === "Open_Palm" && state.inputRight === "Open_Palm");
+        
+        if (!state.hasLeft || !state.hasRight) {
+            // Hands not detected
+            DOM.ui.calibMsg.textContent = "SHOW BOTH HANDS";
+        } else if (!isCalibratingGesture) {
+            // Hands detected, but not the right gesture
+            DOM.ui.calibMsg.textContent = "HOLD OPEN PALMS";
+        } else {
+            // Hands detected with correct gesture, synchronizing...
+            DOM.ui.calibMsg.textContent = "SYNCHRONIZING...";
         }
+    }
     } 
     
     requestAnimationFrame(gameLoop);
