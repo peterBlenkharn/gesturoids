@@ -46,6 +46,8 @@ export async function initAI() {
 }
 
 
+// js/controls.js - UPDATED startWebcam (Simplified)
+
 /**
  * Requests camera access with robust fallback constraints.
  */
@@ -72,24 +74,15 @@ export async function startWebcam() {
 
         DOM.video.srcObject = stream;
         
-        // 3. IMPORTANT: Explicitly handle the play promise for mobile policies
+        // 3. IMPORTANT: Wait for the video to start playing.
         await DOM.video.play();
         
-        // 4. Wait for video data to start flowing before starting the prediction loop
-        DOM.video.addEventListener("loadeddata", () => {
-            // Setup the low-res debug canvas size here
-            DOM.ui.debugCanvas.width = CONSTANTS.CRUNCH_WIDTH;
-            DOM.ui.debugCanvas.height = CONSTANTS.CRUNCH_HEIGHT;
-            DOM.ui.debugCtx.imageSmoothingEnabled = false; 
-
-            // Start the AI prediction loop
-            requestAnimationFrame(predictWebcam);
-        }, { once: true });
-
+        // 4. CRITICAL FIX: Start the AI prediction loop immediately.
+        // We rely on the DOM.video.readyState check inside predictWebcam to prevent drawing too early.
+        requestAnimationFrame(predictWebcam);
 
     } catch(e) {
         console.error("CAMERA ERROR:", e);
-        // Provide clear feedback on mobile
         alert(`CAMERA ACCESS FAILED: ${e.name} - ${e.message}\n\nPlease ensure:\n1. You are on HTTPS.\n2. You clicked 'Allow' on the camera prompt.`);
     }
 }
