@@ -1,7 +1,7 @@
 // js/render.js - UPDATED
 
 import { DOM } from './main.js';
-import { CONSTANTS } from './state.js';
+import { CONSTANTS, state } from './state.js';
 
 /**
  * Placeholder for the Color Palette (Monochrome Mint Green)
@@ -86,7 +86,7 @@ export function renderDebugView(results) {
                 // Draw a small dot (only draw the wrist landmark (index 0) for performance)
                 if (index === 0) {
                     ctx.beginPath();
-                    ctx.arc(x, y, 2, 0, $2\pi$); 
+                    ctx.arc(x, y, 2, 0, 2*Math.PI); 
                     ctx.fill();
                 }
             });
