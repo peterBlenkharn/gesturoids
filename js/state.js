@@ -18,7 +18,8 @@ export const CONSTANTS = {
   CRUNCH_WIDTH: 80,
   CRUNCH_HEIGHT: 60,
 
-  // Input Smoothing Frame Count (Required consecutive frames for a gesture to register)
+  // Calibration Settings (Approx. 2 seconds at 30-40 FPS)
+  CALIB_THRESHOLD: 80, // NEW CONSTANT
   SMOOTHING_FRAMES: 5, 
 };
 
