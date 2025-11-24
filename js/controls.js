@@ -127,51 +127,39 @@ export async function predictWebcam() {
     }
 }
 
-/**
- * Maps raw results to smoothed state inputs and applies input smoothing.
- * Also handles the state transition out of calibration.
- */
+// js/controls.js - UPDATED processHands
+
 export function processHands(results) {
     // 1. Reset Hand Presence Flags
-    state.hasLeft = false;
-    state.hasRight = false;
+    state.hasLeft = false; // Flag for PILOT (Left Control side)
+    state.hasRight = false; // Flag for WEAPONS (Right Control side)
+    state.inputLeft = "None"; // Gesture for PILOT
+    state.inputRight = "None"; // Gesture for WEAPONS
 
     // 2. Identify and Process Hands
     if (results.handedness && results.handedness.length > 0) {
         
-        // Find which hand is which (Left or Right) based on the model's prediction
-        const rawLeftInput = { gesture: "None", score: 0 };
-        const rawRightInput = { gesture: "None", score: 0 };
-        let handCount = 0;
-
         for (let i = 0; i < results.handedness.length; i++) {
             const hand = results.handedness[i][0];
-            const gesture = results.gestures[i][0];
+            const gesture = results.gestures[i] && results.gestures[i].length > 0 ? results.gestures[i][0] : null;
             const landmark = results.landmarks[i];
 
-            if (hand.score > 0.8) { // Use a fixed score check for hand presence
-                handCount++;
+            if (hand.score > 0.8 && landmark) { 
                 
-                // Determine screen side (Left side is the Player's right hand due to scaleX(-1) on video)
-                const handSide = (landmark[0].x < 0.5) ? 'Left' : 'Right'; 
+                // Determine screen side using wrist landmark (index 0)
+                // x < 0.5 is the LEFT HALF of the screen (Player's Right Hand)
+                const wristX = landmark[0].x;
                 
-                // Update presence flags based on screen side
-                if (handSide === 'Left') {
-                    state.hasLeft = true;
-                } else if (handSide === 'Right') {
+                if (wristX < 0.5) { // LEFT HALF of Screen -> WEAPONS Control
                     state.hasRight = true;
-                }
-
-                // Placeholder for actual gesture mapping (we only care about "None" vs other for now)
-                const currentGesture = (gesture && gesture.score > state.confidenceThreshold) ? gesture.categoryName : "None";
-                const score = (gesture) ? gesture.score : 0;
-                
-                if (handSide === 'Left') {
-                    rawLeftInput.gesture = currentGesture;
-                    rawLeftInput.score = score;
-                } else {
-                    rawRightInput.gesture = currentGesture;
-                    rawRightInput.score = score;
+                    if (gesture && gesture.score > state.confidenceThreshold) {
+                        state.inputRight = gesture.categoryName;
+                    }
+                } else { // RIGHT HALF of Screen -> PILOT Control
+                    state.hasLeft = true;
+                    if (gesture && gesture.score > state.confidenceThreshold) {
+                        state.inputLeft = gesture.categoryName;
+                    }
                 }
             }
         }
@@ -182,14 +170,9 @@ export function processHands(results) {
         checkCalibration();
     }
     
-    // --- 4. Apply Input Smoothing (To be fully implemented later) ---
-    // For now, we'll bypass smoothing and directly map the inputs 
-    state.inputLeft = rawLeftInput.gesture;
-    state.inputRight = rawRightInput.gesture;
-
-    // 5. Render debug view
+    // 4. Render debug view (Must be called in the same frame as prediction)
     if (state.debugCam) {
-        renderDebugView(results); 
+        renderDebugView(results); // The results contain the landmarks needed for the dots
     }
 }
 
