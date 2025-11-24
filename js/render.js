@@ -73,31 +73,38 @@ export function renderDebugView(results) {
     ctx.drawImage(DOM.video, 0, 0, w * -1, h); 
     ctx.restore();
 
-    // 2. Draw Hand Landmarks (Optional, but useful for debugging AI)
+    // 2. Draw Hand Landmarks (Wireframe)
     if (results && results.landmarks) {
-        // Simple dot for the wrist landmark
+        
+        // Set style for drawing lines and points
+        ctx.strokeStyle = colorPalette.MINT;
+        ctx.lineWidth = 1;
         ctx.fillStyle = colorPalette.MINT;
         
         results.landmarks.forEach(landmarks => {
             
-            // CRITICAL FIX: Apply inverse transform for landmarks
-            // This un-flips the context temporarily so landmarks appear on the visually correct side.
+            // CRITICAL: Apply inverse transform for landmarks
             ctx.save();
             ctx.scale(-1, 1); // Flip X back
             ctx.translate(-w, 0); // Translate back by the width 'w'
 
-            landmarks.forEach((point, index) => {
-                // Scale the normalized landmark coordinates (0 to 1) to the canvas size (80x60)
-                const x = point.x * w;
-                const y = point.y * h;
-                
-                // Draw a small dot (only draw the wrist landmark (index 0) for performance)
-                if (index === 0) {
-                    ctx.beginPath();
-                    ctx.arc(x, y, 2, 0, 2 * Math.PI); 
-                    ctx.fill();
-                }
+            // --- A. Draw Connections (Lines) ---
+            ctx.beginPath();
+            for (const [start, end] of HAND_CONNECTIONS) { // Use the imported connections
+                const p1 = landmarks[start];
+                const p2 = landmarks[end];
+                // Scale normalized coordinates (0-1) to crunched size (w, h)
+                ctx.moveTo(p1.x * w, p1.y * h);
+                ctx.lineTo(p2.x * w, p2.y * h);
+            }
+            ctx.stroke();
+
+            // --- B. Draw Points (Dots) ---
+            landmarks.forEach(point => {
+                // Draw a tiny 1x1 rectangle for the point
+                ctx.fillRect(Math.floor(point.x * w), Math.floor(point.y * h), 1, 1);
             });
+
             ctx.restore(); // Restore context to the post-video-draw flipped state
         });
     }
