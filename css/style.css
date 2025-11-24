@@ -1,2 +1,86 @@
-/* Gesturoids CSS - Starting Blank */
-/* Will contain all styling, including the pixel font, monochrome palette, and retro effects. */
+/* css/style.css */
+
+/* --- 1. THE MONOCHROME PALETTE & FONT SIMULATION --- */
+:root {
+  --bg-color: #050505;
+  --primary: #00ff88; /* Core Mint Green */
+  --secondary: #00ccff; /* Used lightly for accents, but main theme is primary */
+  --danger: #ff3333; /* Used internally for red states, but we'll use color cycling */
+  --ui-bg: rgba(0, 20, 0, 0.8);
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg-color);
+  /* Simulate a blocky, retro font */
+  font-family: 'Courier New', Courier, monospace; 
+  color: var(--primary);
+  user-select: none;
+  touch-action: none; /* Prevents mobile scrolling/zooming */
+}
+
+/* --- 2. FULL-SCREEN GAME CONTAINER --- */
+.game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  /* Subtle dark scanline background effect (vertical lines) */
+  background: linear-gradient(to right, rgba(18, 16, 16, 0) 99%, rgba(0, 0, 0, 0.1) 100%);
+  background-size: 2px 100%;
+}
+
+/* --- 3. CANVAS SETUP --- */
+canvas#gameCanvas { 
+  display: block; 
+  /* Mirror the canvas so the user's right hand maps to the game's right side */
+  transform: scaleX(-1); 
+}
+
+#ui-layer { 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+  pointer-events: none; /* Allows clicks/taps to pass through to elements that need them */
+}
+
+.hidden { 
+  display: none !important; 
+}
+
+/* --- 4. WEBCAM & DEBUG PIP STYLES --- */
+#webcam { 
+  position: absolute; 
+  opacity: 0; 
+  width: 1px; 
+  height: 1px; 
+}
+
+#camera-pip {
+  position: absolute;
+  top: 50px; 
+  left: 10px;
+  width: 160px; /* Small default size */
+  height: 120px;
+  border: 2px solid var(--primary);
+  background: #000;
+  z-index: 190; /* Should be visible over the game canvas */
+  box-shadow: 0 0 15px var(--primary);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#debugCanvas {
+  width: 100%; 
+  height: 100%;
+  transform: scaleX(-1);
+  /* CRITICAL: Pixelation filters for the retro look */
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  /* Filter to enforce monochrome and contrast */
+  filter: grayscale(100%) contrast(150%) brightness(0.9);
+}
