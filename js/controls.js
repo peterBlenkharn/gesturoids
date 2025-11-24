@@ -4,9 +4,9 @@ import {
   GestureRecognizer,
   FilesetResolver
 } from "@mediapipe/tasks-vision";
-
 import { state, CONSTANTS, player, resetEntities } from './state.js';
-import { DOM } from './main.js'; // Import DOM references from main.js
+import { DOM } from './main.js';
+import { renderDebugView } from './render.js'; // Import the debug render function
 
 let gestureRecognizer;
 let lastVideoTime = -1;
@@ -134,11 +134,92 @@ export async function predictWebcam() {
 
 /**
  * Maps raw results to smoothed state inputs and applies input smoothing.
- * (Will be fully implemented later once smoothing logic is defined)
+ * Also handles the state transition out of calibration.
  */
 export function processHands(results) {
-    // console.log("Processing Hands...");
-    // Future logic for gesture mapping, spatial checks, and smoothing
+    // 1. Reset Hand Presence Flags
+    state.hasLeft = false;
+    state.hasRight = false;
+
+    // 2. Identify and Process Hands
+    if (results.handedness && results.handedness.length > 0) {
+        
+        // Find which hand is which (Left or Right) based on the model's prediction
+        const rawLeftInput = { gesture: "None", score: 0 };
+        const rawRightInput = { gesture: "None", score: 0 };
+        let handCount = 0;
+
+        for (let i = 0; i < results.handedness.length; i++) {
+            const hand = results.handedness[i][0];
+            const gesture = results.gestures[i][0];
+            const landmark = results.landmarks[i];
+
+            if (hand.score > 0.8) { // Use a fixed score check for hand presence
+                handCount++;
+                
+                // Determine screen side (Left side is the Player's right hand due to scaleX(-1) on video)
+                const handSide = (landmark[0].x < 0.5) ? 'Left' : 'Right'; 
+                
+                // Update presence flags based on screen side
+                if (handSide === 'Left') {
+                    state.hasLeft = true;
+                } else if (handSide === 'Right') {
+                    state.hasRight = true;
+                }
+
+                // Placeholder for actual gesture mapping (we only care about "None" vs other for now)
+                const currentGesture = (gesture && gesture.score > state.confidenceThreshold) ? gesture.categoryName : "None";
+                const score = (gesture) ? gesture.score : 0;
+                
+                if (handSide === 'Left') {
+                    rawLeftInput.gesture = currentGesture;
+                    rawLeftInput.score = score;
+                } else {
+                    rawRightInput.gesture = currentGesture;
+                    rawRightInput.score = score;
+                }
+            }
+        }
+    }
+
+    // --- 3. Run Calibration Logic (Only if in CALIBRATING mode) ---
+    if (state.mode === "CALIBRATING") {
+        checkCalibration();
+    }
+    
+    // --- 4. Apply Input Smoothing (To be fully implemented later) ---
+    // For now, we'll bypass smoothing and directly map the inputs 
+    state.inputLeft = rawLeftInput.gesture;
+    state.inputRight = rawRightInput.gesture;
+
+    // 5. Render debug view
+    if (state.debugCam) {
+        renderDebugView(results); 
+    }
+}
+
+
+/**
+ * Handles the logic for confirming the player is ready to start.
+ */
+function checkCalibration() {
+    // Calibration requires both hands to be visible and stable
+    if (state.hasLeft && state.hasRight) {
+        
+        // Both hands are detected, increase calibration score
+        state.calibScore++;
+        
+        // If score reaches threshold, transition to game start
+        if (state.calibScore >= CONSTANTS.CALIB_THRESHOLD) {
+            console.log("CALIBRATION COMPLETE: Starting Game.");
+            state.mode = "HOLDING"; // Transition to Spatial Start state
+            // startGame(); // To be called from main.js or a dedicated game start module
+            state.calibScore = 0; // Reset
+        }
+    } else {
+        // Hands are not visible or stable, decrease score (prevents cheating/accidental starts)
+        state.calibScore = Math.max(0, state.calibScore - 2); 
+    }
 }
 
 // Placeholder for Power Management (to be implemented later)
