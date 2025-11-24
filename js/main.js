@@ -98,9 +98,21 @@ function initialize() {
     DOM.ui.shieldCtx = DOM.ui.shieldCanvas.getContext("2d");
     DOM.ui.scoreDisp = document.getElementById("scoreDisp");
 
+    // CRITICAL: ADD MISSING CALIBRATION UI REFERENCES
+    DOM.ui.statLeft = document.getElementById("status-left");
+    DOM.ui.statRight = document.getElementById("status-right");
+    DOM.ui.calibBar = document.getElementById("calib-progress");
+    DOM.ui.calibMsg = document.querySelector("#calibration-overlay .msg");
+    
     // 4. Set Initial Canvas Size
     DOM.canvas.width = CONSTANTS.CANVAS_WIDTH;
     DOM.canvas.height = CONSTANTS.CANVAS_HEIGHT;
+
+    // CRITICAL: Set debug canvas size immediately here.
+    if (DOM.ui.debugCanvas) {
+        DOM.ui.debugCanvas.width = CONSTANTS.CRUNCH_WIDTH;
+        DOM.ui.debugCanvas.height = CONSTANTS.CRUNCH_HEIGHT;
+    }
 
     // 5. Initialize Renderer
     initRender(); 
