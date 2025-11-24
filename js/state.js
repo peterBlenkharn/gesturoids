@@ -10,18 +10,25 @@ export const CONSTANTS = {
   MAX_SPEED: 7,
   ROTATION_SPEED: 0.08,
   FRICTION: 0.97,
-  MISSILE_COOLDOWN: 3000,
+  MISSILE_COOLDOWN: 180, // Changed from 3000ms to 180 frames (3 seconds) for frame-based logic
   CANVAS_WIDTH: window.innerWidth,
   CANVAS_HEIGHT: window.innerHeight,
+  
+  // New Game Logic Constants
+  ACCELERATION: 0.3, // Player acceleration factor
+  GUN_COOLDOWN: 10,  // Frames between laser shots
+  MAX_SHIELDS: 3,    // Initial player shields
   
   // Retro Camera Settings
   CRUNCH_WIDTH: 80,
   CRUNCH_HEIGHT: 60,
 
-  // Calibration Settings (Approx. 2 seconds at 30-40 FPS)
-  CALIB_THRESHOLD: 80, // NEW CONSTANT
+  // Calibration Settings 
+  CALIB_THRESHOLD: 80, 
   SMOOTHING_FRAMES: 5, 
 };
+
+
 
 export const HAND_CONNECTIONS = [
   [0,1],[1,2],[2,3],[3,4], // Thumb
