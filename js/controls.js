@@ -156,12 +156,3 @@ export function toggleCameraStream(on) {
         lastVideoTime = -1; // Reset frame time
     }
 }
-
-// Ensure all required functions are exported:
-export { 
-    initAI, 
-    startWebcam, 
-    predictWebcam, 
-    processHands, 
-    toggleCameraStream 
-}
