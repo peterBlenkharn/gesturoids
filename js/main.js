@@ -27,11 +27,12 @@ function initialize() {
     console.log("Gesturoids System Booting...");
     
     // 1. Get Core DOM References
+    // ... (unchanged DOM retrieval) ...
     DOM.canvas = document.getElementById("gameCanvas");
     DOM.ctx = DOM.canvas.getContext("2d");
     DOM.video = document.getElementById("webcam");
     
-    // 2. Get Debug Canvas References (for camera PIP)
+    // 2. Get Debug Canvas References
     DOM.ui.debugCanvas = document.getElementById("debugCanvas");
     DOM.ui.debugCtx = DOM.ui.debugCanvas.getContext("2d");
     
@@ -39,10 +40,13 @@ function initialize() {
     DOM.canvas.width = CONSTANTS.CANVAS_WIDTH;
     DOM.canvas.height = CONSTANTS.CANVAS_HEIGHT;
 
-    // 4. Start AI Model Loading
+    // 4. Initialize Renderer (Audio, Color Palettes)
+    initRender(); // <-- NEW CALL
+
+    // 5. Start AI Model Loading
     initAI();
 
-    // 5. Initial Game Loop Call
+    // 6. Initial Game Loop Call
     requestAnimationFrame(gameLoop);
 }
 
