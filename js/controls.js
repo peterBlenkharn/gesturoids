@@ -95,40 +95,35 @@ export async function startWebcam() {
 }
 
 
-/**
- * The main loop for AI prediction and frame rendering.
- */
+// js/controls.js - UPDATED predictWebcam
 export async function predictWebcam() {
     try {
         // 1. Stop if video isn't ready or paused (e.g., in PAUSED mode)
+        // CRITICAL CHECK: Ensure video has sufficient data to be drawn
         if (DOM.video.paused || DOM.video.ended || DOM.video.readyState < 2) {
             requestAnimationFrame(predictWebcam);
             return;
         }
 
         // 2. Check if a new frame is available
-        if (DOM.video.currentTime !== lastVideoTime) {
-            lastVideoTime = DOM.video.currentTime;
+        const now = DOM.video.currentTime;
+        if (now !== lastVideoTime) {
+            lastVideoTime = now;
             
             // 3. Run prediction
-            const results = gestureRecognizer.recognizeForVideo(DOM.video, performance.now());
+            // Use timeStamp from performance.now() as required by MediaPipe's video runningMode
+            const results = gestureRecognizer.recognizeForVideo(DOM.video, performance.now()); 
             
             // 4. Process results and apply input smoothing
             processHands(results);
-            
-            // 5. Render debug view (if camera PIP is toggled on)
-            if (state.debugCam) {
-                // Render function will be implemented in render.js
-                // renderDebugView(results); 
-            }
         }
         
-        // 6. Loop
+        // 5. Loop (Always call requestAnimationFrame to keep the prediction loop running)
         requestAnimationFrame(predictWebcam);
 
     } catch (err) {
         console.error("AI Prediction Loop Error:", err);
-        requestAnimationFrame(predictWebcam);
+        requestAnimationFrame(predictWebcam); // Keep trying to loop
     }
 }
 
