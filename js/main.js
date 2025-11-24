@@ -1,7 +1,7 @@
 // js/main.js - UPDATED
 
 import { state, CONSTANTS, resetEntities } from './state.js';
-import { initAI } from './controls.js'; 
+import { initAI, startWebcam } from './controls.js';
 import { updateVisuals, initRender } from './render.js'; // We'll update render.js next
 
 /**
@@ -34,6 +34,43 @@ export const DOM = {
         cameraPip: null,
     } 
 };
+
+/**
+ * Handles state transitions for the Menu and Initialization process.
+ */
+function updateMenuState() {
+    if (state.mode === "LOADING") {
+        DOM.ui.menu.classList.remove("hidden");
+        DOM.ui.loadingText.textContent = "BOOTING NEURAL NET...";
+        DOM.ui.startBtn.disabled = true;
+    } else if (state.mode === "MENU") {
+        // AI model is loaded, enable the button
+        DOM.ui.menu.classList.remove("hidden");
+        DOM.ui.loadingText.textContent = "SYSTEM READY. PRESS INITIALIZE.";
+        DOM.ui.startBtn.disabled = false;
+        
+        // Ensure the button is only listening once
+        DOM.ui.startBtn.onclick = enterCalibration;
+    } else if (state.mode === "CALIBRATING") {
+        // Hide the main menu, show the calibration screen
+        DOM.ui.menu.classList.add("hidden");
+        DOM.ui.calib.classList.remove("hidden");
+    }
+}
+
+/**
+ * Triggered by the "INITIALIZE SYSTEMS" button.
+ * Sets the mode and starts the camera (critical for mobile gesture security).
+ */
+function enterCalibration() {
+    if (state.mode !== "MENU") return;
+
+    state.mode = "CALIBRATING";
+    updateMenuState();
+    
+    // CRITICAL MOBILE FIX: Camera start MUST happen inside the user gesture handler
+    startWebcam();
+}
 
 /**
  * Initial setup function called when the script starts.
@@ -86,17 +123,15 @@ function initialize() {
  */
 function gameLoop(timestamp) {
     
-    let dt = 1.0; // Placeholder for time delta
+    // Update the menu state on every frame until playing
+    if (state.mode === "LOADING" || state.mode === "MENU" || state.mode === "CALIBRATING") {
+        updateMenuState(); 
 
-    if (state.mode === "LOADING" || state.mode === "MENU") {
-        // Simple loading/menu screen loop
+        // Always draw black background when not playing
         DOM.ctx.fillStyle = "black";
         DOM.ctx.fillRect(0, 0, CONSTANTS.CANVAS_WIDTH, CONSTANTS.CANVAS_HEIGHT);
-        // We will call a dedicated menu render function here later
     } 
     // Other game modes handled later
-    
-    // updateVisuals(dt); // Will be added once render.js is ready
     
     requestAnimationFrame(gameLoop);
 }
