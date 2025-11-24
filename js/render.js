@@ -1,7 +1,7 @@
 // js/render.js - UPDATED
 
 import { DOM } from './main.js';
-import { CONSTANTS, state } from './state.js';
+import { CONSTANTS, state , HAND_CONNECTIONS} from './state.js';
 
 /**
  * Placeholder for the Color Palette (Monochrome Mint Green)
@@ -83,14 +83,15 @@ export function renderDebugView(results) {
         
         results.landmarks.forEach(landmarks => {
             
-            // CRITICAL: Apply inverse transform for landmarks
+            // CRITICAL FIX: Apply inverse transform for landmarks
+            // We save/restore context *per hand* to ensure correct drawing boundaries
             ctx.save();
-            ctx.scale(-1, 1); // Flip X back
+            ctx.scale(-1, 1);     // Flip X back
             ctx.translate(-w, 0); // Translate back by the width 'w'
 
             // --- A. Draw Connections (Lines) ---
             ctx.beginPath();
-            for (const [start, end] of HAND_CONNECTIONS) { // Use the imported connections
+            for (const [start, end] of HAND_CONNECTIONS) { // Now correctly imported
                 const p1 = landmarks[start];
                 const p2 = landmarks[end];
                 // Scale normalized coordinates (0-1) to crunched size (w, h)
@@ -105,7 +106,7 @@ export function renderDebugView(results) {
                 ctx.fillRect(Math.floor(point.x * w), Math.floor(point.y * h), 1, 1);
             });
 
-            ctx.restore(); // Restore context to the post-video-draw flipped state
+            ctx.restore(); // Restore context
         });
     }
 }
