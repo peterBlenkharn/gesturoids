@@ -81,8 +81,7 @@ export function renderDebugView(results) {
         results.landmarks.forEach(landmarks => {
             
             // CRITICAL FIX: Apply inverse transform for landmarks
-            // Landmarks are 0-1, and we need them to draw on the visually correct side 
-            // after the video has been drawn and the context is in a flipped state.
+            // This un-flips the context temporarily so landmarks appear on the visually correct side.
             ctx.save();
             ctx.scale(-1, 1); // Flip X back
             ctx.translate(-w, 0); // Translate back by the width 'w'
@@ -95,7 +94,7 @@ export function renderDebugView(results) {
                 // Draw a small dot (only draw the wrist landmark (index 0) for performance)
                 if (index === 0) {
                     ctx.beginPath();
-                    ctx.arc(x, y, 2, 0, 2 * Math.PI); // Correct JS syntax
+                    ctx.arc(x, y, 2, 0, 2 * Math.PI); 
                     ctx.fill();
                 }
             });
