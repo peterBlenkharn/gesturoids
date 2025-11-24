@@ -1,1 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesturoids: Vector Combat</title>
+    <link rel="stylesheet" href="css/style.css">
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/+esm"
+        }
+      }
+    </script>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
 
+        <div id="ui-layer">
+            
+            <div id="camera-pip" class="hidden">
+                <canvas id="debugCanvas"></canvas>
+            </div>
+        </div>
+
+        <video id="webcam" autoplay playsinline muted></video>
+    </div>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
