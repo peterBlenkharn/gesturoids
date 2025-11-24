@@ -49,13 +49,49 @@ export function initRender() {
     }
 }
 
-
 /**
  * Renders the low-res camera feed and hand tracking points.
- * (Full implementation will occur after the menu is built)
+ * Also applies the retro bit-crunched aesthetic.
  */
 export function renderDebugView(results) {
-    // ... logic for drawing the bit-crunched video and landmarks ...
+    if (!DOM.video.srcObject || DOM.video.readyState < 2 || !state.debugCam) {
+        return;
+    }
+    
+    const ctx = DOM.ui.debugCtx;
+    const w = CONSTANTS.CRUNCH_WIDTH;
+    const h = CONSTANTS.CRUNCH_HEIGHT;
+
+    // 1. Draw the Video Frame onto the low-res canvas
+    // CRITICAL: Draw the video at the Crunched size (80x60)
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    
+    // Scale the context to flip the image (match CSS transform)
+    ctx.scale(-1, 1); 
+    // Draw the image, then translate back (since we scaled on the x-axis)
+    ctx.drawImage(DOM.video, 0, 0, w * -1, h); 
+    ctx.restore();
+
+    // 2. Draw Hand Landmarks (Optional, but useful for debugging AI)
+    if (results && results.landmarks) {
+        // Simple dot for the wrist landmark
+        ctx.fillStyle = colorPalette.MINT;
+        results.landmarks.forEach(landmarks => {
+            landmarks.forEach((point, index) => {
+                // Scale the normalized landmark coordinates (0 to 1) to the canvas size (80x60)
+                const x = point.x * w;
+                const y = point.y * h;
+                
+                // Draw a small dot (only draw the wrist landmark (index 0) for performance)
+                if (index === 0) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 2, 0, $2\pi$); 
+                    ctx.fill();
+                }
+            });
+        });
+    }
 }
 
 /**
