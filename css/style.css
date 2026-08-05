@@ -1,235 +1,380 @@
-/* css/style.css */
-
-/* --- 1. THE MONOCHROME PALETTE & FONT SIMULATION --- */
 :root {
   --bg-color: #050505;
-  --primary: #00ff88; /* Core Mint Green */
-  --secondary: #00ccff; /* Used lightly for accents, but main theme is primary */
-  --danger: #ff3333; /* Used internally for red states, but we'll use color cycling */
-  --ui-bg: rgba(0, 20, 0, 0.8);
+  --primary: #00ff88;
+  --secondary: #00ccff;
+  --danger: #ff3333;
+  --ui-bg: rgba(0, 20, 0, 0.82);
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  width: 100%;
+  height: 100%;
 }
 
 body {
   margin: 0;
   overflow: hidden;
   background: var(--bg-color);
-  /* Simulate a blocky, retro font */
-  font-family: 'Courier New', Courier, monospace; 
   color: var(--primary);
+  font-family: "Courier New", Courier, monospace;
   user-select: none;
-  touch-action: none; /* Prevents mobile scrolling/zooming */
+  touch-action: none;
 }
 
-/* --- 2. FULL-SCREEN GAME CONTAINER --- */
 .game-container {
   position: relative;
   width: 100vw;
   height: 100vh;
-  /* Subtle dark scanline background effect (vertical lines) */
-  background: linear-gradient(to right, rgba(18, 16, 16, 0) 99%, rgba(0, 0, 0, 0.1) 100%);
-  background-size: 2px 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.13) 50%),
+    var(--bg-color);
+  background-size: 100% 4px;
 }
 
-/* --- 3. CANVAS SETUP --- */
-canvas#gameCanvas { 
-  display: block; 
-  /* Mirror the canvas so the user's right hand maps to the game's right side */
-  transform: scaleX(-1); 
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1);
 }
 
-#ui-layer { 
-  position: absolute; 
-  top: 0; 
-  left: 0; 
-  width: 100%; 
-  height: 100%; 
-  pointer-events: none; /* Allows clicks/taps to pass through to elements that need them */
+#ui-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
-.hidden { 
-  display: none !important; 
+.hidden { display: none !important; }
+
+#webcam {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 
-/* --- 4. WEBCAM & DEBUG PIP STYLES --- */
-#webcam { 
-  position: absolute; 
-  opacity: 0; 
-  width: 1px; 
-  height: 1px; 
+.debug-controls {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(10px, env(safe-area-inset-left));
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px;
+  border: 1px solid #333;
+  background: #000;
+  font-size: 0.7rem;
+  pointer-events: auto;
 }
 
 #camera-pip {
   position: absolute;
-  top: 50px; 
-  left: 10px;
-  width: 160px; /* Small default size */
+  top: max(50px, calc(env(safe-area-inset-top) + 40px));
+  left: max(10px, env(safe-area-inset-left));
+  z-index: 190;
+  width: 160px;
   height: 120px;
+  overflow: hidden;
   border: 2px solid var(--primary);
   background: #000;
-  z-index: 190; /* Should be visible over the game canvas */
   box-shadow: 0 0 15px var(--primary);
-  overflow: hidden;
   pointer-events: none;
 }
 
 #debugCanvas {
-  width: 100%; 
+  width: 100%;
   height: 100%;
   transform: scaleX(-1);
-  /* CRITICAL: Pixelation filters for the retro look */
-  image-rendering: -moz-crisp-edges;
-  image-rendering: -webkit-crisp-edges;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  /* Filter to enforce monochrome and contrast */
   filter: grayscale(100%) contrast(150%) brightness(0.9);
 }
-/* --- 5. UI UTILS & LAYOUT --- */
-.overlay, #calibration-overlay { 
-  position: absolute; 
-  top: 0; 
-  left: 0; 
-  width: 100%; 
-  height: 100%; 
-  background: rgba(0,0,0,0.95); 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: center; 
-  z-index: 50; 
-  pointer-events: auto; /* Allows interaction */
-}
 
-button { 
-  background: #000; 
-  color: var(--primary); 
-  border: 2px solid var(--primary); 
-  padding: 15px 30px; 
-  font-size: 1rem; 
-  cursor: pointer; 
-  font-family: 'Courier New', monospace; 
-  text-transform: uppercase; 
-  margin-top: 20px; 
-  transition: 0.1s; 
-}
-button:disabled { 
-  border-color: #333; 
-  color: #333; 
-  cursor: wait; 
-}
-button:hover:not(:disabled) { 
-  background: var(--primary); 
-  color: #000; 
-  box-shadow: 0 0 20px var(--primary); 
-}
-
-
-/* --- 6. GLITCH HEADER EFFECT (Optional, but adds juice) --- */
-h1.glitch-text {
-  font-size: 3rem; 
-  letter-spacing: 5px;
-  color: #fff;
-  margin: 0 0 20px 0;
+.toggle-switch {
   position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 15px;
+}
+
+.toggle-switch input {
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  border: 1px solid #555;
+  background: #333;
+}
+
+.slider::before {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  width: 9px;
+  height: 9px;
+  background: #888;
+  content: "";
+  transition: 0.2s;
+}
+
+input:checked + .slider { background: var(--primary); }
+input:checked + .slider::before {
+  transform: translateX(14px);
+  background: #000;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.95);
+  text-align: center;
+  pointer-events: auto;
+}
+
+h1.glitch-text {
+  position: relative;
+  margin: 0 0 20px;
+  color: #fff;
+  font-size: clamp(2.4rem, 8vw, 5rem);
+  letter-spacing: 0.12em;
   animation: glitch 3s infinite;
+}
+
+h1.glitch-text::before,
+h1.glitch-text::after {
+  position: absolute;
+  inset: 0;
+  content: "GESTUROIDS";
+}
+
+h1.glitch-text::before {
+  z-index: -1;
+  color: #ff00ff;
+  animation: glitch-a 0.4s infinite linear alternate-reverse;
+}
+
+h1.glitch-text::after {
+  z-index: -2;
+  color: #00ffff;
+  animation: glitch-b 0.4s infinite linear alternate-reverse;
+}
+
+@keyframes glitch {
+  0%, 6%, 100% { transform: skew(0); opacity: 1; }
+  2% { transform: skew(10deg); opacity: 0.8; }
+  4% { transform: skew(-10deg); }
+}
+
+@keyframes glitch-a {
+  from { clip-path: inset(20% 0 80%); transform: translateX(-2px); }
+  to { clip-path: inset(30% 0); transform: translateX(2px); }
+}
+
+@keyframes glitch-b {
+  from { clip-path: inset(10% 0 60%); transform: translateX(2px); }
+  to { clip-path: inset(5% 0 80%); transform: translateX(-2px); }
+}
+
+button {
+  margin-top: 20px;
+  padding: 15px 30px;
+  border: 2px solid var(--primary);
+  background: #000;
+  color: var(--primary);
+  font: 1rem "Courier New", monospace;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.1s;
+}
+
+button:disabled {
+  border-color: #333;
+  color: #333;
+  cursor: wait;
+}
+
+button:hover:not(:disabled),
+button:focus-visible:not(:disabled) {
+  background: var(--primary);
+  color: #000;
+  box-shadow: 0 0 20px var(--primary);
+}
+
+#final-score-box {
+  margin-top: 22px;
+  color: var(--danger);
+  font-weight: bold;
+  letter-spacing: 0.08em;
+}
+
+.hud-top {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  width: min(620px, calc(100% - 220px));
+  transform: translateX(-50%);
+  font-size: 1rem;
+  text-shadow: 0 0 5px var(--primary);
+}
+
+.hud-group {
+  display: flex;
+  min-width: 90px;
+  flex-direction: column;
+  align-items: center;
+}
+
+.label {
+  margin-bottom: 2px;
+  color: #888;
+  font-size: 0.7rem;
+}
+
+#missileDisp.cooldown { color: var(--danger); }
+
+.status-container {
+  display: flex;
+  width: min(90%, 650px);
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.hand-status {
+  width: 130px;
+  flex: 0 0 auto;
+  padding: 10px;
+  border: 2px solid #333;
+  background: rgba(0, 0, 0, 0.5);
+  text-align: center;
+  transition: 0.2s;
+}
+
+.hand-status.ok {
+  border-color: var(--primary);
+  background: rgba(0, 255, 136, 0.15);
+  box-shadow: 0 0 20px var(--primary);
+}
+
+.status-icon { margin-bottom: 5px; font-size: 2rem; }
+.status-text { font-size: 1rem; font-weight: bold; }
+.status-sub { margin-top: 5px; color: #888; font-size: 0.7rem; }
+.hand-status.ok .status-sub { color: var(--primary); }
+
+.center-status {
+  width: 100%;
+  max-width: 300px;
   text-align: center;
 }
 
-h1.glitch-text::before, h1.glitch-text::after {
-  content: "GESTUROIDS";
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-}
-/* Use different colors for the glitch layers for maximum effect */
-h1.glitch-text::before { color: #ff00ff; z-index: -1; animation: glitch-anim-1 0.4s infinite linear alternate-reverse; }
-h1.glitch-text::after { color: #00ffff; z-index: -2; animation: glitch-anim-2 0.4s infinite linear alternate-reverse; }
-
-@keyframes glitch { /* Subtle screen shake */
-  0% { transform: skew(0deg); opacity: 1; }
-  2% { transform: skew(10deg); opacity: 0.8; }
-  4% { transform: skew(-10deg); opacity: 1; }
-  6% { transform: skew(0deg); opacity: 1; }
-  100% { transform: skew(0deg); }
-}
-@keyframes glitch-anim-1 { /* Color shifting */
-  0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 0); }
-  100% { clip-path: inset(30% 0 30% 0); transform: translate(2px, 0); }
-}
-@keyframes glitch-anim-2 {
-  0% { clip-path: inset(10% 0 60% 0); transform: translate(2px, 0); }
-  100% { clip-path: inset(5% 0 80% 0); transform: translate(-2px, 0); }
-}
-
-
-/* --- 7. HUD & Calibration --- */
-.hud-top { 
-  display: flex; 
-  justify-content: space-between; 
-  padding: 10px 20px 0 20px; 
-  font-size: 1rem; 
-  text-shadow: 0 0 5px var(--primary);
-  position: absolute; /* Place over the canvas */
+.progress-bar {
   width: 100%;
-  box-sizing: border-box;
-  pointer-events: none;
-  z-index: 10;
-}
-.hud-group { 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-}
-.label { 
-  font-size: 0.7rem; 
-  color: #888; 
-  margin-bottom: 2px; 
+  height: 15px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 2px solid #555;
+  background: #111;
 }
 
-/* Calibration Status Elements */
-.status-container { 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  gap: 20px; 
-  margin-top: 20px; 
-  width: 90%; 
-  max-width: 600px;
+#calib-progress {
+  width: 0;
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.1s;
 }
-.hand-status { 
-  width: 120px; 
-  padding: 10px; 
-  border: 2px solid #333; 
-  background: rgba(0,0,0,0.5); 
-  text-align: center; 
-  transition: 0.3s; 
+
+.msg {
+  color: #aaa;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
 }
-.hand-status.ok { 
-  border-color: var(--primary); 
-  background: rgba(0, 255, 136, 0.15); 
-  box-shadow: 0 0 20px var(--primary); 
+
+.blink { animation: blink 0.7s step-end infinite; }
+@keyframes blink { 50% { opacity: 0.25; } }
+
+.controls-layer {
+  position: absolute;
+  right: max(10px, env(safe-area-inset-right));
+  bottom: max(10px, env(safe-area-inset-bottom));
+  left: max(10px, env(safe-area-inset-left));
+  display: flex;
+  justify-content: space-between;
 }
-.blink { 
-  animation: blinker 0.2s infinite; 
-} 
-@keyframes blinker { 
-  50% { opacity: 0; } 
+
+.panel {
+  display: flex;
+  width: 130px;
+  flex-direction: column;
+  gap: 5px;
 }
-.center-status { 
-  width: 100%; 
-  max-width: 300px; 
-  text-align: center; 
+
+.panel.right { align-items: flex-end; }
+
+.panel-title {
+  width: 100%;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--primary);
+  font-size: 0.8rem;
+  font-weight: bold;
 }
-.progress-bar { 
-  width: 100%; 
-  height: 15px; 
-  border: 2px solid #555; 
-  margin-bottom: 10px; 
-  overflow: hidden; 
-  background: #111; 
+
+.panel.right .panel-title { text-align: right; }
+
+.card {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #333;
+  background: rgba(0, 20, 0, 0.68);
+  font-size: 0.72rem;
+  opacity: 0.38;
+  transition: 0.1s;
 }
-#calib-progress { 
-  width: 0%; 
-  height: 100%; 
-  background: var(--primary); 
-  transition: width 0.1s; 
+
+.card.active {
+  border-color: var(--primary);
+  background: rgba(0, 255, 136, 0.22);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+  opacity: 1;
+}
+
+@media (max-width: 700px), (max-height: 520px) {
+  #camera-pip { width: 120px; height: 90px; }
+  .debug-controls { font-size: 0.6rem; }
+  .hud-top {
+    top: max(8px, env(safe-area-inset-top));
+    width: calc(100% - 150px);
+    margin-left: 65px;
+    font-size: 0.82rem;
+  }
+  .hud-group { min-width: 62px; }
+  .panel { width: 112px; }
+  .card { padding: 4px; font-size: 0.62rem; }
+  .status-container { flex-wrap: wrap; gap: 10px; }
+  .center-status { order: 3; max-width: 280px; }
+  .hand-status { width: 120px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }

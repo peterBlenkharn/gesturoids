@@ -72,13 +72,19 @@ export function getHandInput(results, confidenceThreshold, calibrationConfidence
         input[`has${control}`] = true;
         input[`gesture${control}`] = hand.gesture?.categoryName ?? "None";
         input[`gestureScore${control}`] = hand.gesture?.score ?? 0;
-        input[`openPalm${control}`] = (
+        const openPalm = (
             hand.gesture?.categoryName === "Open_Palm" &&
             hand.gesture.score >= calibrationConfidence
         ) || looksLikeOpenPalm(hand.landmarks);
+        input[`openPalm${control}`] = openPalm;
 
-        if (hand.gesture?.score >= confidenceThreshold) {
+        if (hand.gesture?.categoryName !== "None" && hand.gesture?.score >= confidenceThreshold) {
             input[`input${control}`] = hand.gesture.categoryName;
+        } else if (openPalm) {
+            // An open palm drives thrust/laser as well as calibration. The
+            // landmark fallback keeps these primary controls responsive when
+            // the canned gesture classifier returns a low-confidence `None`.
+            input[`input${control}`] = "Open_Palm";
         }
     };
 

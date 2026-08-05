@@ -2,24 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#050505">
     <title>Gesturoids</title>
     <link rel="stylesheet" href="css/style.css">
-    
     <script type="importmap">
-      {
-        "imports": {
-          "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/+esm"
+        {
+            "imports": {
+                "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/+esm"
+            }
         }
-      }
     </script>
 </head>
 <body>
-    <div class="game-container">
-        <canvas id="gameCanvas"></canvas>
+    <main class="game-container">
+        <canvas id="gameCanvas" aria-label="Gesturoids game field"></canvas>
 
         <div id="ui-layer">
-            <div class="hud-top hidden">
+            <div class="hud-top hidden" aria-live="polite">
                 <div class="hud-group">
                     <span class="label">SHIELDS</span>
                     <canvas id="shieldCanvas" width="100" height="30"></canvas>
@@ -30,63 +30,74 @@
                 </div>
                 <div class="hud-group">
                     <span class="label">ORDNANCE</span>
-                    <span id="missileDisp">LASER</span>
+                    <span id="missileDisp">READY</span>
                 </div>
             </div>
-            
-            <div id="calibration-overlay" class="hidden overlay">
-                <h2 class="blink">SYSTEM CALIBRATION</h2>
-                <p>Show both hands to synchronize</p>
-                
+
+            <section id="calibration-overlay" class="hidden overlay" aria-labelledby="calibration-title">
+                <h2 id="calibration-title" class="blink">SYSTEM CALIBRATION</h2>
+                <p>Hold both open palms to synchronize</p>
+
                 <div class="status-container">
                     <div class="hand-status" id="status-left">
                         <div class="status-icon">❌</div>
                         <div class="status-text">PILOT</div>
                         <div class="status-sub">LEFT SIDE</div>
                     </div>
-        
+
                     <div class="center-status">
                         <div class="progress-bar"><div id="calib-progress"></div></div>
-                        <div class="msg">HOLD STEADY</div>
+                        <div class="msg">SHOW BOTH HANDS</div>
                     </div>
-        
+
                     <div class="hand-status" id="status-right">
                         <div class="status-icon">❌</div>
-                        <div class="status-text">WEAPONS</div>
+                        <div class="status-text">GUNNER</div>
                         <div class="status-sub">RIGHT SIDE</div>
                     </div>
                 </div>
-            </div>
-        
-            <div id="menu-overlay" class="overlay">
-                <h1 class="glitch-text">GESTUROIDS</h1>
-                <p id="loadingText">BOOTING NEURAL NET...</p> 
-                <button id="startBtn" disabled>INITIALIZE SYSTEMS</button>
+            </section>
+
+            <section id="menu-overlay" class="overlay" aria-labelledby="game-title">
+                <h1 id="game-title" class="glitch-text">GESTUROIDS</h1>
+                <p id="loadingText">BOOTING NEURAL NET...</p>
+                <button id="startBtn" type="button" disabled>INITIALIZE SYSTEMS</button>
                 <div id="final-score-box" class="hidden">
                     <p>MISSION FAILED</p>
                     <p>SCORE: <span id="finalScoreVal">0</span></p>
                 </div>
-            </div>
-        
+            </section>
+
             <div class="debug-controls">
-                <label class="toggle-switch">
+                <label class="toggle-switch" aria-label="Show optical sensor preview">
                     <input type="checkbox" id="camToggle" checked>
                     <span class="slider"></span>
                 </label>
                 <span>OPTICAL SENSORS</span>
             </div>
-            
-            <div id="camera-pip">
+
+            <div id="camera-pip" aria-hidden="true">
                 <canvas id="debugCanvas"></canvas>
             </div>
-            
-            <div class="controls-layer hidden">
+
+            <div class="controls-layer hidden" aria-label="Gesture controls">
+                <div class="panel left">
+                    <div class="panel-title">PILOT (L)</div>
+                    <div class="card" data-side="left" data-gesture="Open_Palm">🖐️ THRUST</div>
+                    <div class="card" data-side="left" data-gesture="Closed_Fist">✊ BRAKE</div>
+                    <div class="card" data-side="left" data-gesture="Thumb_Up">👍 RIGHT</div>
+                    <div class="card" data-side="left" data-gesture="Thumb_Down">👎 LEFT</div>
+                </div>
+                <div class="panel right">
+                    <div class="panel-title">GUNNER (R)</div>
+                    <div class="card" data-side="right" data-gesture="Open_Palm">🖐️ LASER</div>
+                    <div class="card" data-side="right" data-gesture="Victory">✌️ MISSILE</div>
+                </div>
             </div>
-        
         </div>
 
         <video id="webcam" autoplay playsinline muted></video>
-    </div>
+    </main>
 
     <script type="module" src="js/main.js"></script>
 </body>

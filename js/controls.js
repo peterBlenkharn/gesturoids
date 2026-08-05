@@ -1,189 +1,107 @@
-// js/controls.js 
+import { FilesetResolver, GestureRecognizer } from "@mediapipe/tasks-vision";
+import { CONFIG } from "./config.js";
+import { getHandInput } from "./hand-input.js";
 
-import {
-  GestureRecognizer,
-  FilesetResolver
-} from "@mediapipe/tasks-vision";
-import { state, CONSTANTS } from './state.js';
-import { DOM } from './main.js';
-import { renderDebugView } from './render.js'; // Import the debug render function
-import { advanceCalibration, getHandInput } from './hand-input.js';
+const WASM_PATH = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm";
+const MODEL_PATH = "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task";
 
-let gestureRecognizer;
-let lastVideoTime = -1;
+export function createGestureController({ video, onFrame, onError }) {
+    let recognizer = null;
+    let stream = null;
+    let running = false;
+    let animationFrame = null;
+    let lastVideoTime = -1;
 
-/**
- * Initializes the MediaPipe Gesture Recognizer model.
- */
-export async function initAI() {
-    try {
-        // 1. Update UI (Assuming a loading message exists in index.html)
-        // For now, we'll just log
-        console.log("Controls: Loading MediaPipe...");
-
-        const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-        );
-        
-        // 2. Create the recognizer instance
-        gestureRecognizer = await GestureRecognizer.createFromOptions(vision, {
+    async function createRecognizer(vision, delegate) {
+        return GestureRecognizer.createFromOptions(vision, {
             baseOptions: {
-                modelAssetPath: "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
-                delegate: "GPU" // Use GPU for better mobile performance
+                modelAssetPath: MODEL_PATH,
+                delegate,
             },
             runningMode: "VIDEO",
-            numHands: 2
+            numHands: 2,
+            minHandDetectionConfidence: 0.5,
+            minHandPresenceConfidence: 0.5,
+            minTrackingConfidence: 0.5,
         });
-
-        // 3. Model Loaded Successfully
-        state.mode = "MENU"; 
-        console.log("Controls: AI Model READY.");
-        // We'll update the menu UI in a later step
-        
-    } catch (error) {
-        console.error("Controls: AI Model FAILED to load:", error);
-        alert("SYSTEM ERROR: AI Model failed. Check internet connection.");
     }
-}
 
-
-// js/controls.js - UPDATED startWebcam (Simplified)
-
-/**
- * Requests camera access with robust fallback constraints.
- */
-export async function startWebcam() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Browser does not support camera access.");
-        return;
-    }
-    
-    try {
-        let stream;
+    async function initialize() {
+        const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
         try {
-            // 1. Try mobile-friendly constraints (user-facing)
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: "user" 
-                } 
-            });
-        } catch (err) {
-            // 2. Fallback: Try any available video source
-            console.warn("Camera fallback triggered: using any video source.");
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            recognizer = await createRecognizer(vision, "GPU");
+        } catch (gpuError) {
+            console.warn("GPU gesture recognition unavailable; using CPU.", gpuError);
+            recognizer = await createRecognizer(vision, "CPU");
+        }
+    }
+
+    async function startCamera() {
+        if (!recognizer) throw new Error("Gesture recognizer is not ready.");
+        if (!navigator.mediaDevices?.getUserMedia) {
+            throw new Error("This browser does not support camera access.");
         }
 
-        DOM.video.srcObject = stream;
-        
-        // 3. IMPORTANT: Wait for the video to start playing.
-        await DOM.video.play();
-        
-        // 4. CRITICAL FIX: Start the AI prediction loop immediately.
-        // We rely on the DOM.video.readyState check inside predictWebcam to prevent drawing too early.
-        requestAnimationFrame(predictWebcam);
+        if (!stream?.active) {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: "user",
+                    },
+                    audio: false,
+                });
+            } catch (preferredCameraError) {
+                console.warn("Preferred camera unavailable; using any camera.", preferredCameraError);
+                stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            }
 
-    } catch(e) {
-        console.error("CAMERA ERROR:", e);
-        alert(`CAMERA ACCESS FAILED: ${e.name} - ${e.message}\n\nPlease ensure:\n1. You are on HTTPS.\n2. You clicked 'Allow' on the camera prompt.`);
-    }
-}
-
-
-// js/controls.js - UPDATED predictWebcam
-export async function predictWebcam() {
-    try {
-        // 1. Stop if video isn't ready or paused (e.g., in PAUSED mode)
-        // CRITICAL CHECK: Ensure video has sufficient data to be drawn
-        if (DOM.video.paused || DOM.video.ended || DOM.video.readyState < 2) {
-            requestAnimationFrame(predictWebcam);
-            return;
+            video.srcObject = stream;
+            await video.play();
         }
 
-        // 2. Check if a new frame is available
-        const now = DOM.video.currentTime;
-        if (now !== lastVideoTime) {
-            lastVideoTime = now;
-            
-            // 3. Run prediction
-            // Use timeStamp from performance.now() as required by MediaPipe's video runningMode
-            const results = gestureRecognizer.recognizeForVideo(DOM.video, performance.now()); 
-            
-            // 4. Process results and apply input smoothing
-            processHands(results);
+        if (!running) {
+            running = true;
+            lastVideoTime = -1;
+            animationFrame = requestAnimationFrame(predict);
         }
-        
-        // 5. Loop (Always call requestAnimationFrame to keep the prediction loop running)
-        requestAnimationFrame(predictWebcam);
-
-    } catch (err) {
-        console.error("AI Prediction Loop Error:", err);
-        requestAnimationFrame(predictWebcam); // Keep trying to loop
     }
-}
 
-// js/controls.js - UPDATED processHands
+    function predict() {
+        if (!running) return;
 
-export function processHands(results) {
-    const input = getHandInput(
-        results,
-        state.confidenceThreshold,
-        CONSTANTS.CALIBRATION_GESTURE_CONFIDENCE
-    );
-    state.hasLeft = input.hasLeft;
-    state.hasRight = input.hasRight;
-    state.inputLeft = input.inputLeft;
-    state.inputRight = input.inputRight;
-    state.gestureLeft = input.gestureLeft;
-    state.gestureRight = input.gestureRight;
-    state.gestureScoreLeft = input.gestureScoreLeft;
-    state.gestureScoreRight = input.gestureScoreRight;
-    state.openPalmLeft = input.openPalmLeft;
-    state.openPalmRight = input.openPalmRight;
-
-    // --- 3. Run Calibration Logic (Only if in CALIBRATING mode) ---
-    if (state.mode === "CALIBRATING") {
-        checkCalibration();
-    }
-    
-    // 4. Render debug view (Must be called in the same frame as prediction)
-    if (state.debugCam) {
-        renderDebugView(results); // The results contain the landmarks needed for the dots
-    }
-}
-
-
-/**
- * Handles the logic for confirming the player is ready to start.
- */
-function checkCalibration() {
-    const isCalibratingGesture = state.openPalmLeft && state.openPalmRight;
-
-    const calibration = advanceCalibration(
-        state.calibScore,
-        state.hasLeft && state.hasRight && isCalibratingGesture,
-        CONSTANTS.CALIB_THRESHOLD
-    );
-    state.calibScore = calibration.score;
-
-    if (calibration.complete) {
-        console.log("CALIBRATION COMPLETE: Starting Game.");
-        state.mode = "STARTING";
-        state.calibScore = 0;
-    }
-}
-
-// Placeholder for Power Management (to be implemented later)
-export function toggleCameraStream(on) {
-    if (on) {
-        startWebcam();
-    } else {
-        // Shutdown logic: find stream and stop all tracks
-        const stream = DOM.video.srcObject;
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            DOM.video.srcObject = null;
-            console.log("Controls: Camera stream shutdown.");
+        try {
+            if (!video.paused && !video.ended && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+                lastVideoTime = video.currentTime;
+                const results = recognizer.recognizeForVideo(video, performance.now());
+                const handInput = getHandInput(
+                    results,
+                    CONFIG.gestureConfidence,
+                    CONFIG.calibration.gestureConfidence
+                );
+                onFrame(handInput, results);
+            }
+        } catch (error) {
+            onError(error);
         }
-        lastVideoTime = -1; // Reset frame time
+
+        animationFrame = requestAnimationFrame(predict);
     }
+
+    function stopCamera() {
+        running = false;
+        if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+        lastVideoTime = -1;
+        stream?.getTracks().forEach((track) => track.stop());
+        stream = null;
+        video.srcObject = null;
+    }
+
+    return {
+        initialize,
+        startCamera,
+        stopCamera,
+    };
 }
