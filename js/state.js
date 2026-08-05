@@ -42,7 +42,7 @@ export const HAND_CONNECTIONS = [
 
 // --- 2. GAME STATE ---
 export const state = {
-  mode: "LOADING", // LOADING, MENU, CALIBRATING, HOLDING, PLAYING, PAUSED, GAMEOVER
+  mode: "LOADING", // LOADING, MENU, CALIBRATING, STARTING, PLAYING, PAUSED, GAMEOVER
   score: 0,
   highScore: parseInt(localStorage.getItem("gesturoids_highscore")) || 0,
   shields: 3,
@@ -82,4 +82,20 @@ export function resetEntities() {
   missiles = [];
   asteroids = [];
   particles = [];
+}
+
+export function setPlayer(nextPlayer) {
+  player = nextPlayer;
+}
+
+export function setBullets(nextBullets) {
+  bullets = nextBullets;
+}
+
+export function setMissiles(nextMissiles) {
+  missiles = nextMissiles;
+}
+
+export function setParticles(nextParticles) {
+  particles = nextParticles;
 }

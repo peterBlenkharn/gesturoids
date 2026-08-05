@@ -4,9 +4,10 @@ import {
   GestureRecognizer,
   FilesetResolver
 } from "@mediapipe/tasks-vision";
-import { state, CONSTANTS, player, resetEntities } from './state.js';
+import { state, CONSTANTS } from './state.js';
 import { DOM } from './main.js';
 import { renderDebugView } from './render.js'; // Import the debug render function
+import { getHandInput } from './hand-input.js';
 
 let gestureRecognizer;
 let lastVideoTime = -1;
@@ -123,40 +124,11 @@ export async function predictWebcam() {
 // js/controls.js - UPDATED processHands
 
 export function processHands(results) {
-    // 1. Reset Hand Presence Flags
-    state.hasLeft = false; // Flag for PILOT (Left Control side)
-    state.hasRight = false; // Flag for WEAPONS (Right Control side)
-    state.inputLeft = "None"; // Gesture for PILOT
-    state.inputRight = "None"; // Gesture for WEAPONS
-
-    // 2. Identify and Process Hands
-    if (results.handedness && results.handedness.length > 0) {
-        
-        for (let i = 0; i < results.handedness.length; i++) {
-            const hand = results.handedness[i][0];
-            const gesture = results.gestures[i] && results.gestures[i].length > 0 ? results.gestures[i][0] : null;
-            const landmark = results.landmarks[i];
-
-            if (hand.score > 0.8 && landmark) { 
-                
-                // Determine screen side using wrist landmark (index 0)
-                // x < 0.5 is the LEFT HALF of the screen (Player's Right Hand)
-                const wristX = landmark[0].x;
-                
-                if (wristX < 0.5) { // LEFT HALF of Screen -> WEAPONS Control
-                    state.hasRight = true;
-                    if (gesture && gesture.score > state.confidenceThreshold) {
-                        state.inputRight = gesture.categoryName;
-                    }
-                } else { // RIGHT HALF of Screen -> PILOT Control
-                    state.hasLeft = true;
-                    if (gesture && gesture.score > state.confidenceThreshold) {
-                        state.inputLeft = gesture.categoryName;
-                    }
-                }
-            }
-        }
-    }
+    const input = getHandInput(results, state.confidenceThreshold);
+    state.hasLeft = input.hasLeft;
+    state.hasRight = input.hasRight;
+    state.inputLeft = input.inputLeft;
+    state.inputRight = input.inputRight;
 
     // --- 3. Run Calibration Logic (Only if in CALIBRATING mode) ---
     if (state.mode === "CALIBRATING") {
@@ -186,7 +158,7 @@ function checkCalibration() {
         // If score reaches threshold, transition to game start
         if (state.calibScore >= CONSTANTS.CALIB_THRESHOLD) {
             console.log("CALIBRATION COMPLETE: Starting Game.");
-            state.mode = "PLAYING"; // Transition directly to PLAYING (Game loop will call startGame)
+            state.mode = "STARTING";
             state.calibScore = 0; // Reset
         }
     } else {

@@ -8,7 +8,11 @@ import {
     bullets, 
     missiles, 
     asteroids, 
-    particles 
+    particles,
+    setPlayer,
+    setBullets,
+    setMissiles,
+    setParticles
 } from './state.js';
 import { initAI, startWebcam } from './controls.js';
 import { initRender, renderDebugView, updateVisuals, drawShields, audio } from './render.js';
@@ -46,6 +50,8 @@ export const DOM = {
         // Calibration UI references (for Step 13 fix)
         statLeft: null,
         statRight: null,
+        statLeftIcon: null,
+        statRightIcon: null,
         calibBar: null,
         calibMsg: null,
 
@@ -334,7 +340,7 @@ function startGame() {
     document.querySelector(".hud-top").classList.remove("hidden");
     
     resetEntities(); // Clear old arrays (already imports from state.js)
-    player = new Player(); // Recreate player instance
+    setPlayer(new Player()); // Recreate player instance
     
     // Reset scores and spawn first wave
     state.shields = CONSTANTS.MAX_SHIELDS; // Assume MAX_SHIELDS = 3 (will need to be defined in state.js)
@@ -343,7 +349,6 @@ function startGame() {
     for(let i=0; i<3; i++) spawnAsteroid(true);
 
     state.lastTime = performance.now();
-    requestAnimationFrame(gameLoop); // Restart the loop if it stopped (shouldn't need to, but safer)
 }
 
 // Game Over logic
@@ -517,6 +522,8 @@ function initialize() {
     // Calibration UI (CRITICAL for Step 13 fix)
     DOM.ui.statLeft = document.getElementById("status-left");
     DOM.ui.statRight = document.getElementById("status-right");
+    DOM.ui.statLeftIcon = DOM.ui.statLeft.querySelector(".status-icon");
+    DOM.ui.statRightIcon = DOM.ui.statRight.querySelector(".status-icon");
     DOM.ui.calibBar = document.getElementById("calib-progress");
     DOM.ui.calibMsg = document.querySelector("#calibration-overlay .msg");
     
@@ -565,6 +572,8 @@ function gameLoop(timestamp) {
         // --- Calibration UI Update (FIXED: using DOM.ui references) ---
         DOM.ui.statLeft.classList.toggle("ok", state.hasLeft);
         DOM.ui.statRight.classList.toggle("ok", state.hasRight);
+        DOM.ui.statLeftIcon.textContent = state.hasLeft ? "✅" : "❌";
+        DOM.ui.statRightIcon.textContent = state.hasRight ? "✅" : "❌";
         
         const progress = (state.calibScore / CONSTANTS.CALIB_THRESHOLD) * 100;
         DOM.ui.calibBar.style.width = `${progress}%`;
@@ -579,14 +588,18 @@ function gameLoop(timestamp) {
             DOM.ui.calibMsg.textContent = "SYNCHRONIZING...";
         }
     }
+
+    if (state.mode === "STARTING") {
+        startGame();
+    }
     
     if (state.mode === "PLAYING") {
         // --- 3. Update Game State ---
         player.update(dt);
-        bullets = bullets.filter(b => b.update(dt));
-        missiles = missiles.filter(m => m.update(dt));
+        setBullets(bullets.filter(b => b.update(dt)));
+        setMissiles(missiles.filter(m => m.update(dt)));
         asteroids.forEach(a => a.update(dt));
-        particles = particles.filter(p => p.update(dt));
+        setParticles(particles.filter(p => p.update(dt)));
         
         checkCollisions();
         spawnLogic();
