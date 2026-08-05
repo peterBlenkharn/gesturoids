@@ -24,7 +24,8 @@ export const CONSTANTS = {
   CRUNCH_HEIGHT: 60,
 
   // Calibration Settings 
-  CALIB_THRESHOLD: 80, 
+  CALIB_THRESHOLD: 20,
+  CALIBRATION_GESTURE_CONFIDENCE: 0.45,
   SMOOTHING_FRAMES: 5, 
 };
 
@@ -52,6 +53,12 @@ export const state = {
   // Hand Inputs (Smoothed values)
   inputLeft: "None",
   inputRight: "None",
+  gestureLeft: "None",
+  gestureRight: "None",
+  gestureScoreLeft: 0,
+  gestureScoreRight: 0,
+  openPalmLeft: false,
+  openPalmRight: false,
   
   // Raw Input Buffers for smoothing logic
   rawLeftBuffer: [],

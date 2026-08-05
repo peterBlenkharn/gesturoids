@@ -52,6 +52,8 @@ export const DOM = {
         statRight: null,
         statLeftIcon: null,
         statRightIcon: null,
+        statLeftSub: null,
+        statRightSub: null,
         calibBar: null,
         calibMsg: null,
 
@@ -524,6 +526,8 @@ function initialize() {
     DOM.ui.statRight = document.getElementById("status-right");
     DOM.ui.statLeftIcon = DOM.ui.statLeft.querySelector(".status-icon");
     DOM.ui.statRightIcon = DOM.ui.statRight.querySelector(".status-icon");
+    DOM.ui.statLeftSub = DOM.ui.statLeft.querySelector(".status-sub");
+    DOM.ui.statRightSub = DOM.ui.statRight.querySelector(".status-sub");
     DOM.ui.calibBar = document.getElementById("calib-progress");
     DOM.ui.calibMsg = document.querySelector("#calibration-overlay .msg");
     
@@ -572,13 +576,19 @@ function gameLoop(timestamp) {
         // --- Calibration UI Update (FIXED: using DOM.ui references) ---
         DOM.ui.statLeft.classList.toggle("ok", state.hasLeft);
         DOM.ui.statRight.classList.toggle("ok", state.hasRight);
-        DOM.ui.statLeftIcon.textContent = state.hasLeft ? "✅" : "❌";
-        DOM.ui.statRightIcon.textContent = state.hasRight ? "✅" : "❌";
+        DOM.ui.statLeftIcon.textContent = state.openPalmLeft ? "✋" : (state.hasLeft ? "✅" : "❌");
+        DOM.ui.statRightIcon.textContent = state.openPalmRight ? "✋" : (state.hasRight ? "✅" : "❌");
+        DOM.ui.statLeftSub.textContent = state.openPalmLeft
+            ? "OPEN PALM"
+            : (state.hasLeft ? state.gestureLeft.replaceAll("_", " ") : "LEFT SIDE");
+        DOM.ui.statRightSub.textContent = state.openPalmRight
+            ? "OPEN PALM"
+            : (state.hasRight ? state.gestureRight.replaceAll("_", " ") : "RIGHT SIDE");
         
         const progress = (state.calibScore / CONSTANTS.CALIB_THRESHOLD) * 100;
         DOM.ui.calibBar.style.width = `${progress}%`;
         
-        const isCalibratingGesture = (state.inputLeft === "Open_Palm" && state.inputRight === "Open_Palm");
+        const isCalibratingGesture = state.openPalmLeft && state.openPalmRight;
         
         if (!state.hasLeft || !state.hasRight) {
             DOM.ui.calibMsg.textContent = "SHOW BOTH HANDS";

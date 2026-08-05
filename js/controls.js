@@ -7,7 +7,7 @@ import {
 import { state, CONSTANTS } from './state.js';
 import { DOM } from './main.js';
 import { renderDebugView } from './render.js'; // Import the debug render function
-import { getHandInput } from './hand-input.js';
+import { advanceCalibration, getHandInput } from './hand-input.js';
 
 let gestureRecognizer;
 let lastVideoTime = -1;
@@ -124,11 +124,21 @@ export async function predictWebcam() {
 // js/controls.js - UPDATED processHands
 
 export function processHands(results) {
-    const input = getHandInput(results, state.confidenceThreshold);
+    const input = getHandInput(
+        results,
+        state.confidenceThreshold,
+        CONSTANTS.CALIBRATION_GESTURE_CONFIDENCE
+    );
     state.hasLeft = input.hasLeft;
     state.hasRight = input.hasRight;
     state.inputLeft = input.inputLeft;
     state.inputRight = input.inputRight;
+    state.gestureLeft = input.gestureLeft;
+    state.gestureRight = input.gestureRight;
+    state.gestureScoreLeft = input.gestureScoreLeft;
+    state.gestureScoreRight = input.gestureScoreRight;
+    state.openPalmLeft = input.openPalmLeft;
+    state.openPalmRight = input.openPalmRight;
 
     // --- 3. Run Calibration Logic (Only if in CALIBRATING mode) ---
     if (state.mode === "CALIBRATING") {
@@ -146,24 +156,19 @@ export function processHands(results) {
  * Handles the logic for confirming the player is ready to start.
  */
 function checkCalibration() {
-    // Calibration requires both hands to be visible AND holding 'Open_Palm'
-    const isCalibratingGesture = (state.inputLeft === "Open_Palm" && state.inputRight === "Open_Palm");
-    
-    // We only increase the score if the hands are present AND the correct gesture is made.
-    if (state.hasLeft && state.hasRight && isCalibratingGesture) {
-        
-        // Both hands are detected with the correct gesture, increase calibration score
-        state.calibScore++;
-        
-        // If score reaches threshold, transition to game start
-        if (state.calibScore >= CONSTANTS.CALIB_THRESHOLD) {
-            console.log("CALIBRATION COMPLETE: Starting Game.");
-            state.mode = "STARTING";
-            state.calibScore = 0; // Reset
-        }
-    } else {
-        // Decrease score quickly if conditions are not met
-        state.calibScore = Math.max(0, state.calibScore - 2); 
+    const isCalibratingGesture = state.openPalmLeft && state.openPalmRight;
+
+    const calibration = advanceCalibration(
+        state.calibScore,
+        state.hasLeft && state.hasRight && isCalibratingGesture,
+        CONSTANTS.CALIB_THRESHOLD
+    );
+    state.calibScore = calibration.score;
+
+    if (calibration.complete) {
+        console.log("CALIBRATION COMPLETE: Starting Game.");
+        state.mode = "STARTING";
+        state.calibScore = 0;
     }
 }
 
